@@ -1,43 +1,45 @@
 const path = require("path");
 const express = require("express");
-const sqlite = require("sqlite3").verbose();
+const models = require("./models");
+const bodyParser = require("body-parser");
 
-const app = express();
+const app = express(); //init our express app
 
-const db = new sqlite.Database("deadSeas.sqlite", err => {
-  if (err) return console.error(err.message); //Error first handeling!
-  console.log("connected to ye pirates Database!!");
-});
+//body-parser will take http request body and attach it
+//to the request object automatticly for us
+// Put these statements before you define any routes.
+// support parsing of application/json type post data
+app.use(bodyParser.json());
 
-app.use(require("body-parser")());
+//support parsing of application/x-www-form-urlencoded post data
+app.use(bodyParser.urlencoded({ extended: true }));
 
+//Configuring the app to use the right templeting engine
 const handlebars = require("express-handlebars").create({
   defaultLayout: "main"
 });
 
-//const handlebars = require('express-handlebars');
-//handlebars.create({defaultLayout: 'main'});
-
 app.engine("handlebars", handlebars.engine);
-app.set("views", path.join(__dirname, "views"));
+app.set("views", path.join(__dirname, "views")); //where are the views?
+app.use(express.static(path.join(__dirname, "/public")));
 app.set("view engine", "handlebars");
 
 app.set("port", process.env.PORT || 3000);
 
+//Routing Town!!!
 app.get("/", (req, res) => {
-  res.render("index");
-});
-
-app.get("/about", (req, res) => {
-  res.render("about");
-});
-
-app.get("/ship", (req, res) => {
-  res.render("ship");
-});
-
-app.get("/treasure", (req, res) => {
-  res.render("treasure");
+  models.Pirate.findAll({
+    order: [["createdAt", "DESC"]]
+  })
+    .then(data => {
+      res.render("pirates", {
+        pirates: data
+      });
+    })
+    .catch(err => {
+      res.status(400);
+      res.send(err.message);
+    });
 });
 
 app.get("/pirate", (req, res) => {
@@ -45,18 +47,24 @@ app.get("/pirate", (req, res) => {
 });
 
 app.post("/pirate", (req, res) => {
-  console.log(req.body);
-  res.send("Thanks");
+  models.Pirate.create(req.body)
+    .then(data => {
+      res.redirect(303, "pirates");
+    })
+    .catch(err => {
+      res.status(400);
+      res.send(err.message);
+    });
 });
 
-app.use((req, res) => {
-  res.render("404");
-});
-
-app.listen(app.get("port"), () => {
-  console.log(
-    "Express started on http://localhost:" +
-      app.get("port") +
-      "; press Ctrl-C to terminate."
-  );
+//Finally setting the app to listen gets it going
+// sync() will create all table if they doesn't exist in database
+models.sequelize.sync().then(function() {
+  app.listen(app.get("port"), () => {
+    console.log(
+      "Express started on http://localhost:" +
+        app.get("port") +
+        "; press Ctrl-C to terminate."
+    );
+  });
 });
