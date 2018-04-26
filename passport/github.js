@@ -1,15 +1,15 @@
+const GithubStrategy = require("passport-github").Strategy;
 const models = require("../models");
 const ghConfig = require("../gh.js");
-const GithubStrategy = require("passport-github").Strategy;
 
 module.exports = function(passport) {
   passport.use(
     "github",
     new GithubStrategy(
       {
-        clientID: ghConfig.clientId,
+        clientID: ghConfig.clientID,
         clientSecret: ghConfig.clientSecret,
-        callbackURL: ghConfig.callbackUrl
+        callbackUrl: ghConfig.callbackUrl
       },
       // github will send back the tokens and profile
       function(access_token, refresh_token, profile, done) {
