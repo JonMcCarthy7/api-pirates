@@ -45,7 +45,7 @@ app.set("port", process.env.PORT || 3000);
 /* this checks to see passport has deserialized 
 and appended the user to the request */
 const isAuth = (req, res, next) => {
-  console.log("=======Auth Check");
+  console.log("=======Auth Check=======");
   if (req.user) {
     return next();
   } else return res.render("login", {});
@@ -62,12 +62,12 @@ app.get("/", (req, res) => {
       });
     })
     .catch(err => {
-      res.status(400);
+      res.status("400");
       res.send(err.message);
     });
 });
 
-app.get("/pirate", (req, res) => {
+app.get("/pirate", isAuth, (req, res) => {
   res.render("pirate-form");
 });
 
@@ -92,10 +92,21 @@ app.get("/login", (req, res) => {
   res.render("login");
 });
 
-app.get("/users", (res, req) => res.render("users"));
-
-app.get("/profile", function(req, res) {
+app.get("/profile", isAuth, function(req, res) {
   res.render("profile", { user: req.user });
+});
+
+app.get("/users", isAuth, (req, res) => {
+  models.User.findAll({
+    order: [["createdAt", "DESC"]]
+  })
+    .then(data => {
+      res.render("users", { users: data });
+    })
+    .catch(err => {
+      res.status("400");
+      res.send(err.message);
+    });
 });
 
 //register Github route
@@ -111,6 +122,11 @@ app.get(
     res.redirect("/profile");
   }
 );
+
+app.get("/logout", (req, res) => {
+  req.logout();
+  res.redirect("/");
+});
 
 //Finally setting the app to listen gets it going
 // sync() will create all table if they doesn't exist in database
