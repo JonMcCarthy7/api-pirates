@@ -7,7 +7,7 @@ module.exports = function(passport) {
   passport.serializeUser(function(user, done) {
     console.log("============== serializing user: ");
     console.log(user);
-    done(null, user.dataValues.id);
+    done(null, user.id);
   });
 
   passport.deserializeUser(function(id, done) {
